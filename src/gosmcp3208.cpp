@@ -1,14 +1,12 @@
+#include <SPI.h>
+
 #include <Arduino.h>
 
 #include "gosmcp3208.h"
 
-#define GOS_MCP_3208_ERRT_ ""
+//#define GOS_MCP_3208_ERRT_ ""
 
 namespace gos {
-namespace mcp3208 {
-const uint8_t bits = 12;
-const uint16_t resolution = 1 << bits;
-}
 
 Mcp3208::Mcp3208(
   const uint8_t&  pincs,   /* PIN for Chip Select CS is often 10 */
@@ -18,37 +16,43 @@ Mcp3208::Mcp3208(
   pincs_(pincs), spisettings_(clock, order, mode) {
 }
 
-void Mcp3208::initialize() {
+Mcp3208::Mcp3208(const uint8_t&  pincs, const SPISettings& spisettings) :
+  pincs_(pincs),
+  spisettings_(spisettings) {
+}
+
+void Mcp3208::begin() {
   pinMode(pincs_, OUTPUT);
   digitalWrite(pincs_, HIGH);
 }
 
-bool Max6675::read(double& value, const uint8_t& channel) {
+uint16_t Mcp3208::read(const uint8_t& channel) {
   SPI.beginTransaction(spisettings_);
   digitalWrite(pincs_, LOW);
     // CSB Fall to Output Enable
 #ifdef DELAY_MCP_3208_AFTER_EN
   delayMicroseconds(DELAY_MCP_3208_AFTER_EN);
 #endif
-
   SPI.transfer(0b01100000 | ((channel & 0b111) << 2));
-  uint8_t first = spiTransfer(0);
-  uint8_t second = spiTransfer(0);
-
+  uint8_t first = SPI.transfer(0);
+  uint8_t second = SPI.transfer(0);
   digitalWrite(pincs_, HIGH);
   SPI.endTransaction();
-
-  
+  return (first << 4) | (second >> 4);
 }
 
-const char* Max6675::error(uint8_t& length) {
-  if (raw_ & 0x0004) {
-    length = sizeof(GOS_MAX_6675_ERRT_OPEN);
-    return GOS_MAX_6675_ERRT_OPEN;
-  } else {
-    length = 0;
-    return nullptr;
+void Mcp3208::read(uint16_t* values, const uint8_t& lowest, const uint8_t& highest) {
+  uint8_t first, second, index = 0;
+  SPI.beginTransaction(spisettings_);
+  digitalWrite(pincs_, LOW);
+  for (uint8_t ch = lowest; ch <= highest; ch++) {
+    SPI.transfer(0b01100000 | ((ch & 0b111) << 2));
+    first = SPI.transfer(0);
+    second = SPI.transfer(0);
+    values[index++] = (first << 4) | (second >> 4);
   }
+  digitalWrite(pincs_, HIGH);
+  SPI.endTransaction();
 }
 
 }
