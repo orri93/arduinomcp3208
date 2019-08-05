@@ -44,14 +44,17 @@ uint16_t Mcp3208::read(const uint8_t& channel) {
 void Mcp3208::read(uint16_t* values, const uint8_t& lowest, const uint8_t& highest) {
   uint8_t first, second, index = 0;
   SPI.beginTransaction(spisettings_);
-  digitalWrite(pincs_, LOW);
   for (uint8_t ch = lowest; ch <= highest; ch++) {
+    digitalWrite(pincs_, LOW);
+#ifdef DELAY_MCP_3208_BETWEEN
+    delay(DELAY_MCP_3208_BETWEEN);
+#endif
     SPI.transfer(0b01100000 | ((ch & 0b111) << 2));
     first = SPI.transfer(0);
     second = SPI.transfer(0);
     values[index++] = (first << 4) | (second >> 4);
+    digitalWrite(pincs_, HIGH);
   }
-  digitalWrite(pincs_, HIGH);
   SPI.endTransaction();
 }
 

@@ -10,7 +10,10 @@
 #define SPI_BIT_ORDER_MCP_3208    MSBFIRST
 
 #define DELAY_MCP_3208_AFTER_EN      10000 /* Microseconds */
+#define DELAY_MCP_3208_BETWEEN         100
 
+#define GOS_MCP_3208_CHANNEL_MAX         7
+#define GOS_MCP_3208_CHANNEL_COUNT       8
 #define GOS_MCP_3208_BIT                12
 #define GOS_MCP_3208_MAX            0x0fff
 
